@@ -5,7 +5,9 @@ var scanner = require('./lib/scanner')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
-server.listen(80);
+var port = process.env.PORT || 80;
+
+server.listen(port);
 
 //
 app.use(express.static('client'));

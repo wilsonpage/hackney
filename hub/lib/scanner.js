@@ -46,13 +46,14 @@ Scanner.prototype.get = function() {
 
 Scanner.prototype.onFound = function(service) {
   debug('found', service);
-  this.getManifest(service.host)
+  var serviceURL = `http://${service.host}:${service.port}`;
+  this.getManifest(serviceURL)
     .then(manifest => {
       if (!manifest) return;
       debug('got maniest', manifest);
 
       var app = this.cache[service.name] = {
-        base: `http://${service.host}`,
+        base: serviceURL,
         manifest: manifest
       };
 
@@ -68,9 +69,9 @@ Scanner.prototype.onLost = function(service) {
   this.emit('lost', match);
 };
 
-Scanner.prototype.getManifest = function(host) {
-  debug('get manifest', host);
-  return this.getManifestUrl(host)
+Scanner.prototype.getManifest = function(serviceURL) {
+  debug('get manifest', serviceURL);
+  return this.getManifestUrl(serviceURL)
     .then(url => {
       debug('got manifest url', url);
       return new Promise((resolve, reject) => {
@@ -82,17 +83,16 @@ Scanner.prototype.getManifest = function(host) {
     });
 };
 
-Scanner.prototype.getManifestUrl = function(host) {
+Scanner.prototype.getManifestUrl = function(serviceURL) {
   return new Promise((resolve, reject) => {
-    debug('get manifest url', host);
-    if (!host) return reject();
-    var index = `http://${host}`;
-    jsdom.env(index, [], function(err, win) {
+    debug('get manifest url', serviceURL);
+    if (!serviceURL) return reject();
+    jsdom.env(serviceURL, [], function(err, win) {
       if (err) return reject(err);
       var document = win.document;
       var manifest = document.querySelector('link[rel=manifest]');
       if (!manifest) return reject();
-      var location = url.resolve(index, manifest.href);
+      var location = url.resolve(serviceURL, manifest.href);
       resolve(location);
     });
   });
