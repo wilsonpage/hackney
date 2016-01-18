@@ -1,17 +1,23 @@
 
-var mdns = require('mdns');
 var express = require('express');
 var app = express();
+var scanner = require('./lib/scanner')();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
 
-// watch all http servers
-var browser = mdns.createBrowser(mdns.tcp('http'));
+server.listen(80);
 
-browser.on('serviceUp', function(service) {
-  console.log("service up: ", service);
+//
+app.use(express.static('client'));
+
+io.on('connection', function(socket) {
+  socket.emit('found', scanner.get());
+
+  scanner.on('found', function(service) {
+    socket.emit('found', [service]);
+  });
+
+  scanner.on('lost', function(service) {
+    socket.emit('lost', [service]);
+  });
 });
-
-browser.on('serviceDown', function(service) {
-  console.log("service down: ", service);
-});
-
-browser.start();
